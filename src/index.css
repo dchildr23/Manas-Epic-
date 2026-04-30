@@ -1,0 +1,15 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0A0805;
+  color: rgba(220, 200, 170, 0.9);
+  font-family: 'Crimson Pro', serif;
+}
+
+#root {
+  min-height: 100vh;
+}
