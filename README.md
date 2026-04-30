@@ -4,7 +4,7 @@
 
 An interactive web application for exploring the Epic of Manas — one of the longest oral epics in human history and a cornerstone of Kyrgyz cultural heritage. Built with React, powered by the Anthropic API.
 
-**Live Demo:** [dchildr23.github.io/manas-steppe](https://dchildr23.github.io/manas-steppe)
+**Live Demo:** [http://localhost:5173/manas-steppe/](http://localhost:5173/manas-steppe/)
 
 ---
 
