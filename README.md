@@ -186,8 +186,6 @@ This application is built with deep respect for Kyrgyz culture and the living or
 
 ## License
 
-MIT License. See `LICENSE` for details.
-
 ---
 
 *Built by [Daniel Childers](https://github.com/dchildr23)*
