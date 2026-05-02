@@ -45,7 +45,7 @@ A rotating quote from the spirit of the steppe, drawn from the themes of the epi
 | Frontend | React 18 |
 | Styling | Inline CSS with CSS custom properties |
 | Fonts | Cinzel (display), Crimson Pro (body) via Google Fonts |
-| AI | Anthropic Claude API (`claude-sonnet-4-20250514`) |
+| AI | Anthropic Claude API (`claude-3-5-sonnet-20241022`) |
 | Build | Vite |
 | Deploy | GitHub Pages via `gh-pages` |
 
