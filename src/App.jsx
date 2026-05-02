@@ -243,7 +243,7 @@ function useChat() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
+          model: "claude-opus-4-1",
           max_tokens: 1000,
           system: SYSTEM_PROMPT,
           messages: apiMessages,
