@@ -237,9 +237,11 @@ function useChat() {
         content: m.content,
       }));
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("http://localhost:3001/api/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
@@ -247,6 +249,12 @@ function useChat() {
           messages: apiMessages,
         }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("API Error:", response.status, errorData);
+        throw new Error(`API error: ${response.status}`);
+      }
 
       const data = await response.json();
       const assistantText =
@@ -256,7 +264,8 @@ function useChat() {
         ...newMessages,
         { role: "assistant", content: assistantText },
       ]);
-    } catch {
+    } catch (error) {
+      console.error("Chat error:", error);
       setMessages([
         ...newMessages,
         {
