@@ -22,14 +22,18 @@ app.post("/api/messages", async (req, res) => {
     const { messages, system, model, max_tokens } = req.body;
     const apiKey = process.env.VITE_ANTHROPIC_KEY;
 
+    console.log("\n=== NEW REQUEST ===");
+    console.log("API Key exists:", !!apiKey);
+    if (apiKey) {
+      console.log("API Key (first 30 chars):", apiKey.substring(0, 30));
+    }
+
     if (!apiKey) {
       console.error("❌ API key not found in environment variables");
       return res.status(500).json({ error: "API key not configured" });
     }
 
-    console.log("✓ Sending request to Anthropic API with key:", apiKey.slice(0, 20) + "...");
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const options = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -42,10 +46,14 @@ app.post("/api/messages", async (req, res) => {
         system,
         messages,
       }),
-    });
+    };
 
+    console.log("Headers being sent:", JSON.stringify(options.headers, null, 2));
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", options);
     const data = await response.json();
 
+    console.log("Response status:", response.status);
     if (!response.ok) {
       console.error("❌ API Error:", response.status);
       console.error("Full error response:", JSON.stringify(data, null, 2));
