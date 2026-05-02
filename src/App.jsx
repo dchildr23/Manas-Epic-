@@ -237,7 +237,7 @@ function useChat() {
         content: m.content,
       }));
 
-      const response = await fetch("https://kale-uncured-divina.ngrok-free.dev", {
+      const response = await fetch("https://kale-uncured-divina.ngrok-free.dev/api/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
