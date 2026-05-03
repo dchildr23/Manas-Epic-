@@ -1,5 +1,21 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < breakpoint : false
+  );
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, [breakpoint]);
+  return isMobile;
+}
+
 const SYSTEM_PROMPT = `You are the Manas Guide — a wise, poetic presence inspired by the spirit of the Epic of Manas, the great Kyrgyz oral epic. You speak in the voice of a seasoned Manaschi (storyteller), calm yet powerful, grounded in the values of the steppe.
 
 Your tone is:
@@ -284,6 +300,7 @@ function useChat() {
 
 function NavBar({ activeSection, setActiveSection }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
   const sections = [
     { id: "home", label: "Homeland" },
     { id: "story", label: "The Epic" },
@@ -293,53 +310,139 @@ function NavBar({ activeSection, setActiveSection }) {
     { id: "guide", label: "Manas Guide" },
   ];
 
-  return (
-    <nav style={{
-      position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-      background: "rgba(10,8,5,0.88)", backdropFilter: "blur(12px)",
-      borderBottom: "1px solid rgba(193,127,58,0.2)",
-      padding: "0 2rem", display: "flex", alignItems: "center",
-      justifyContent: "space-between", height: "60px",
-    }}>
-      <div
-        onClick={() => setActiveSection("home")}
-        style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}
-      >
-        <div style={{
-          width: "32px", height: "32px", borderRadius: "50%",
-          border: "2px solid #C17F3A",
-          background: "radial-gradient(circle, rgba(193,127,58,0.3) 0%, transparent 70%)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "14px",
-        }}>✦</div>
-        <span style={{ fontFamily: "'Cinzel', serif", color: "#C17F3A", fontSize: "15px", letterSpacing: "0.05em" }}>
-          Manas
-        </span>
-      </div>
+  useEffect(() => {
+    if (!isMobile) setMenuOpen(false);
+  }, [isMobile]);
 
-      <div style={{ display: "flex", gap: "0.25rem" }}>
-        {sections.map((s) => (
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [menuOpen]);
+
+  const handleNav = (id) => {
+    setActiveSection(id);
+    setMenuOpen(false);
+  };
+
+  return (
+    <>
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: "rgba(10,8,5,0.88)", backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderBottom: "1px solid rgba(193,127,58,0.2)",
+        padding: `env(safe-area-inset-top) ${isMobile ? "1rem" : "2rem"} 0`,
+        display: "flex", alignItems: "center",
+        justifyContent: "space-between",
+        height: `calc(60px + env(safe-area-inset-top))`,
+      }}>
+        <div
+          onClick={() => handleNav("home")}
+          style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}
+        >
+          <div style={{
+            width: "32px", height: "32px", borderRadius: "50%",
+            border: "2px solid #C17F3A",
+            background: "radial-gradient(circle, rgba(193,127,58,0.3) 0%, transparent 70%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "14px",
+          }}>✦</div>
+          <span style={{ fontFamily: "'Cinzel', serif", color: "#C17F3A", fontSize: "15px", letterSpacing: "0.05em" }}>
+            Manas
+          </span>
+        </div>
+
+        {isMobile ? (
           <button
-            key={s.id}
-            onClick={() => setActiveSection(s.id)}
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
             style={{
-              background: activeSection === s.id ? "rgba(193,127,58,0.15)" : "transparent",
-              border: activeSection === s.id ? "1px solid rgba(193,127,58,0.4)" : "1px solid transparent",
-              color: activeSection === s.id ? "#C17F3A" : "rgba(220,200,170,0.7)",
-              padding: "6px 12px", borderRadius: "4px", cursor: "pointer",
-              fontSize: "12px", letterSpacing: "0.05em", fontFamily: "'Crimson Pro', serif",
-              transition: "all 0.2s",
+              width: "44px", height: "44px", background: "transparent",
+              border: "1px solid rgba(193,127,58,0.35)", borderRadius: "6px",
+              cursor: "pointer", display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center", gap: "5px",
+              padding: 0,
             }}
           >
-            {s.label}
+            <span style={{
+              width: "18px", height: "1.5px", background: "#C17F3A",
+              transition: "transform 0.25s, opacity 0.25s",
+              transform: menuOpen ? "translateY(6.5px) rotate(45deg)" : "none",
+            }} />
+            <span style={{
+              width: "18px", height: "1.5px", background: "#C17F3A",
+              transition: "opacity 0.2s",
+              opacity: menuOpen ? 0 : 1,
+            }} />
+            <span style={{
+              width: "18px", height: "1.5px", background: "#C17F3A",
+              transition: "transform 0.25s",
+              transform: menuOpen ? "translateY(-6.5px) rotate(-45deg)" : "none",
+            }} />
           </button>
-        ))}
-      </div>
-    </nav>
+        ) : (
+          <div style={{ display: "flex", gap: "0.25rem" }}>
+            {sections.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => handleNav(s.id)}
+                style={{
+                  background: activeSection === s.id ? "rgba(193,127,58,0.15)" : "transparent",
+                  border: activeSection === s.id ? "1px solid rgba(193,127,58,0.4)" : "1px solid transparent",
+                  color: activeSection === s.id ? "#C17F3A" : "rgba(220,200,170,0.7)",
+                  padding: "6px 12px", borderRadius: "4px", cursor: "pointer",
+                  fontSize: "12px", letterSpacing: "0.05em", fontFamily: "'Crimson Pro', serif",
+                  transition: "all 0.2s",
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </nav>
+
+      {isMobile && menuOpen && (
+        <div
+          onClick={() => setMenuOpen(false)}
+          style={{
+            position: "fixed",
+            top: `calc(60px + env(safe-area-inset-top))`,
+            left: 0, right: 0, bottom: 0, zIndex: 99,
+            background: "rgba(10,8,5,0.97)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            display: "flex", flexDirection: "column",
+            padding: "1.5rem 1rem",
+            animation: "fadeIn 0.2s ease",
+          }}
+        >
+          {sections.map((s) => (
+            <button
+              key={s.id}
+              onClick={(e) => { e.stopPropagation(); handleNav(s.id); }}
+              style={{
+                background: activeSection === s.id ? "rgba(193,127,58,0.15)" : "transparent",
+                border: "1px solid " + (activeSection === s.id ? "rgba(193,127,58,0.4)" : "rgba(193,127,58,0.1)"),
+                color: activeSection === s.id ? "#C17F3A" : "rgba(220,200,170,0.85)",
+                padding: "16px 18px", borderRadius: "6px", cursor: "pointer",
+                fontSize: "16px", letterSpacing: "0.05em",
+                fontFamily: "'Cinzel', serif",
+                marginBottom: "0.5rem", textAlign: "left",
+                transition: "all 0.2s",
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
 function HomePage({ setActiveSection }) {
+  const isMobile = useIsMobile();
   const today = new Date().getDay();
   const wisdom = DAILY_WISDOMS[today % DAILY_WISDOMS.length];
 
@@ -350,7 +453,7 @@ function HomePage({ setActiveSection }) {
         minHeight: "100vh", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center", position: "relative",
         background: "radial-gradient(ellipse at 50% 30%, rgba(193,127,58,0.07) 0%, transparent 65%)",
-        padding: "6rem 2rem 4rem",
+        padding: isMobile ? "5rem 1.25rem 3rem" : "6rem 2rem 4rem",
       }}>
         {/* Subtle yurt pattern overlay */}
         <div style={{
@@ -418,8 +521,13 @@ function HomePage({ setActiveSection }) {
 
         {/* Stats */}
         <div style={{
-          display: "flex", gap: "3rem", marginTop: "5rem",
+          display: isMobile ? "grid" : "flex",
+          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : undefined,
+          gap: isMobile ? "1.5rem" : "3rem",
+          marginTop: isMobile ? "3.5rem" : "5rem",
           flexWrap: "wrap", justifyContent: "center",
+          width: isMobile ? "100%" : undefined,
+          maxWidth: isMobile ? "320px" : undefined,
         }}>
           {[
             { num: "500,000+", label: "lines of oral verse" },
@@ -429,11 +537,13 @@ function HomePage({ setActiveSection }) {
           ].map((stat) => (
             <div key={stat.num} style={{ textAlign: "center" }}>
               <div style={{
-                fontFamily: "'Cinzel', serif", fontSize: "2rem",
+                fontFamily: "'Cinzel', serif",
+                fontSize: isMobile ? "1.5rem" : "2rem",
                 color: "#C17F3A", fontWeight: "400",
               }}>{stat.num}</div>
               <div style={{
-                fontFamily: "'Crimson Pro', serif", fontSize: "13px",
+                fontFamily: "'Crimson Pro', serif",
+                fontSize: isMobile ? "11px" : "13px",
                 color: "rgba(220,200,170,0.5)", letterSpacing: "0.08em",
                 textTransform: "uppercase",
               }}>{stat.label}</div>
@@ -444,7 +554,8 @@ function HomePage({ setActiveSection }) {
 
       {/* Daily Wisdom */}
       <div style={{
-        padding: "3rem 2rem", background: "rgba(193,127,58,0.05)",
+        padding: isMobile ? "2.5rem 1.25rem" : "3rem 2rem",
+        background: "rgba(193,127,58,0.05)",
         borderTop: "1px solid rgba(193,127,58,0.15)",
         borderBottom: "1px solid rgba(193,127,58,0.15)",
         textAlign: "center",
@@ -455,7 +566,8 @@ function HomePage({ setActiveSection }) {
           fontFamily: "'Cinzel', serif",
         }}>Daily Wisdom from the Steppe</p>
         <blockquote style={{
-          fontFamily: "'Crimson Pro', serif", fontSize: "1.35rem",
+          fontFamily: "'Crimson Pro', serif",
+          fontSize: isMobile ? "1.1rem" : "1.35rem",
           fontStyle: "italic", color: "rgba(220,200,170,0.85)",
           maxWidth: "680px", margin: "0 auto", lineHeight: "1.65",
         }}>
@@ -464,10 +576,14 @@ function HomePage({ setActiveSection }) {
       </div>
 
       {/* Section previews */}
-      <div style={{ padding: "4rem 2rem", maxWidth: "1100px", margin: "0 auto", width: "100%" }}>
+      <div style={{
+        padding: isMobile ? "3rem 1.25rem" : "4rem 2rem",
+        maxWidth: "1100px", margin: "0 auto", width: "100%",
+      }}>
         <div style={{
-          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: "1.5rem",
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: isMobile ? "1rem" : "1.5rem",
         }}>
           {[
             { title: "The Epic Timeline", desc: "Follow the arc of Manas from prophesied birth to the continuation of his line across three generations.", section: "story", icon: "◎" },
@@ -511,7 +627,8 @@ function HomePage({ setActiveSection }) {
 
       {/* Disclaimer */}
       <div style={{
-        padding: "2rem", textAlign: "center", marginTop: "auto",
+        padding: isMobile ? "1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom))" : "2rem",
+        textAlign: "center", marginTop: "auto",
         borderTop: "1px solid rgba(193,127,58,0.1)",
       }}>
         <p style={{
@@ -530,18 +647,22 @@ function HomePage({ setActiveSection }) {
 
 function StoryTimeline() {
   const [open, setOpen] = useState(null);
+  const isMobile = useIsMobile();
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "6rem 2rem 4rem" }}>
+    <div style={{
+      maxWidth: "800px", margin: "0 auto",
+      padding: isMobile ? "5rem 1.25rem 3rem" : "6rem 2rem 4rem",
+    }}>
       <p style={{ fontFamily: "'Cinzel', serif", fontSize: "11px", letterSpacing: "0.2em", color: "#8B7355", textTransform: "uppercase", marginBottom: "0.5rem" }}>
         The Epic of Manas
       </p>
-      <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: "2.2rem", color: "#E8D5A8", marginBottom: "0.75rem", fontWeight: "400" }}>
+      <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: isMobile ? "1.7rem" : "2.2rem", color: "#E8D5A8", marginBottom: "0.75rem", fontWeight: "400" }}>
         The Great Arc
       </h2>
-      <p style={{ fontFamily: "'Crimson Pro', serif", fontSize: "1.1rem", color: "rgba(220,200,170,0.65)", marginBottom: "3rem", lineHeight: "1.7" }}>
+      <p style={{ fontFamily: "'Crimson Pro', serif", fontSize: isMobile ? "1rem" : "1.1rem", color: "rgba(220,200,170,0.65)", marginBottom: isMobile ? "2rem" : "3rem", lineHeight: "1.7" }}>
         The Epic of Manas is one of the longest oral epics ever recorded — a tapestry of three generations
-        woven by the Manaschi across centuries of nomadic life. Click each chapter to unfold its story.
+        woven by the Manaschi across centuries of nomadic life. Tap each chapter to unfold its story.
       </p>
 
       <div style={{ position: "relative" }}>
@@ -551,7 +672,7 @@ function StoryTimeline() {
         }} />
 
         {TIMELINE.map((item, i) => (
-          <div key={i} style={{ display: "flex", gap: "2rem", marginBottom: "2rem" }}>
+          <div key={i} style={{ display: "flex", gap: isMobile ? "1rem" : "2rem", marginBottom: "2rem" }}>
             <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div
                 onClick={() => setOpen(open === i ? null : i)}
@@ -627,16 +748,20 @@ function StoryTimeline() {
 
 function CharactersPage() {
   const [selected, setSelected] = useState(null);
+  const isMobile = useIsMobile();
 
   return (
-    <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "6rem 2rem 4rem" }}>
+    <div style={{
+      maxWidth: "1000px", margin: "0 auto",
+      padding: isMobile ? "5rem 1.25rem 3rem" : "6rem 2rem 4rem",
+    }}>
       <p style={{ fontFamily: "'Cinzel', serif", fontSize: "11px", letterSpacing: "0.2em", color: "#8B7355", textTransform: "uppercase", marginBottom: "0.5rem" }}>
         Heroes & Companions
       </p>
-      <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: "2.2rem", color: "#E8D5A8", marginBottom: "0.75rem", fontWeight: "400" }}>
+      <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: isMobile ? "1.7rem" : "2.2rem", color: "#E8D5A8", marginBottom: "0.75rem", fontWeight: "400" }}>
         The Great Figures
       </h2>
-      <p style={{ fontFamily: "'Crimson Pro', serif", fontSize: "1.1rem", color: "rgba(220,200,170,0.65)", marginBottom: "3rem", lineHeight: "1.7" }}>
+      <p style={{ fontFamily: "'Crimson Pro', serif", fontSize: isMobile ? "1rem" : "1.1rem", color: "rgba(220,200,170,0.65)", marginBottom: isMobile ? "2rem" : "3rem", lineHeight: "1.7" }}>
         The Epic is populated with complex figures — warriors who doubt, women who endure, advisors who mourn.
         Select a hero to know their story.
       </p>
@@ -658,8 +783,9 @@ function CharactersPage() {
       </div>
 
       <div style={{
-        display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-        gap: "1.25rem",
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(280px, 1fr))",
+        gap: isMobile ? "1rem" : "1.25rem",
       }}>
         {CHARACTERS.map((char) => (
           <div
@@ -731,16 +857,20 @@ function CharactersPage() {
 
 function ThemesPage() {
   const [open, setOpen] = useState(0);
+  const isMobile = useIsMobile();
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "6rem 2rem 4rem" }}>
+    <div style={{
+      maxWidth: "800px", margin: "0 auto",
+      padding: isMobile ? "5rem 1.25rem 3rem" : "6rem 2rem 4rem",
+    }}>
       <p style={{ fontFamily: "'Cinzel', serif", fontSize: "11px", letterSpacing: "0.2em", color: "#8B7355", textTransform: "uppercase", marginBottom: "0.5rem" }}>
         Cultural Context & Wisdom
       </p>
-      <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: "2.2rem", color: "#E8D5A8", marginBottom: "0.75rem", fontWeight: "400" }}>
+      <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: isMobile ? "1.7rem" : "2.2rem", color: "#E8D5A8", marginBottom: "0.75rem", fontWeight: "400" }}>
         Themes of the Steppe
       </h2>
-      <p style={{ fontFamily: "'Crimson Pro', serif", fontSize: "1.1rem", color: "rgba(220,200,170,0.65)", marginBottom: "3rem", lineHeight: "1.7" }}>
+      <p style={{ fontFamily: "'Crimson Pro', serif", fontSize: isMobile ? "1rem" : "1.1rem", color: "rgba(220,200,170,0.65)", marginBottom: isMobile ? "2rem" : "3rem", lineHeight: "1.7" }}>
         The Epic of Manas is not merely a story — it is an encyclopedia of Kyrgyz values, a mirror of
         nomadic philosophy, and a map of what it means to belong to a people.
       </p>
@@ -758,27 +888,28 @@ function ThemesPage() {
             <div
               onClick={() => setOpen(open === i ? null : i)}
               style={{
-                padding: "1.25rem 1.5rem", cursor: "pointer",
+                padding: isMobile ? "1rem 1.1rem" : "1.25rem 1.5rem", cursor: "pointer",
                 background: open === i ? theme.color + "10" : "transparent",
                 display: "flex", alignItems: "center", justifyContent: "space-between",
+                gap: "0.75rem",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                <span style={{ fontSize: "1.25rem", color: theme.color }}>{theme.icon}</span>
-                <h3 style={{ fontFamily: "'Cinzel', serif", fontSize: "1rem", color: "#E8D5A8", fontWeight: "400" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "0.75rem" : "1rem", minWidth: 0 }}>
+                <span style={{ fontSize: "1.25rem", color: theme.color, flexShrink: 0 }}>{theme.icon}</span>
+                <h3 style={{ fontFamily: "'Cinzel', serif", fontSize: isMobile ? "0.95rem" : "1rem", color: "#E8D5A8", fontWeight: "400" }}>
                   {theme.title}
                 </h3>
               </div>
-              <span style={{ color: theme.color, fontSize: "18px" }}>{open === i ? "−" : "+"}</span>
+              <span style={{ color: theme.color, fontSize: "18px", flexShrink: 0 }}>{open === i ? "−" : "+"}</span>
             </div>
 
             {open === i && (
               <div style={{
-                padding: "0 1.5rem 1.5rem",
+                padding: isMobile ? "0 1.1rem 1.1rem" : "0 1.5rem 1.5rem",
                 background: theme.color + "06",
               }}>
                 <div style={{ borderTop: `1px solid ${theme.color}25`, paddingTop: "1rem" }}>
-                  <p style={{ fontFamily: "'Crimson Pro', serif", fontSize: "1.05rem", color: "rgba(220,200,170,0.8)", lineHeight: "1.8" }}>
+                  <p style={{ fontFamily: "'Crimson Pro', serif", fontSize: isMobile ? "0.98rem" : "1.05rem", color: "rgba(220,200,170,0.8)", lineHeight: "1.8" }}>
                     {theme.content}
                   </p>
                 </div>
@@ -821,6 +952,7 @@ function ThemesPage() {
 
 function StoryModePage({ setActiveSection }) {
   const [nodeId, setNodeId] = useState("start");
+  const isMobile = useIsMobile();
   const node = STORY_NODES.find((n) => n.id === nodeId);
 
   const handleChoice = (next) => {
@@ -835,33 +967,40 @@ function StoryModePage({ setActiveSection }) {
     <div style={{
       minHeight: "100vh", display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      padding: "6rem 2rem 4rem",
+      padding: isMobile ? "5rem 1.25rem 3rem" : "6rem 2rem 4rem",
       background: "radial-gradient(ellipse at 50% 40%, rgba(74,143,168,0.06) 0%, transparent 60%)",
     }}>
       <div style={{ maxWidth: "640px", width: "100%", textAlign: "center" }}>
-        <p style={{ fontFamily: "'Cinzel', serif", fontSize: "11px", letterSpacing: "0.2em", color: "#8B7355", textTransform: "uppercase", marginBottom: "2rem" }}>
+        <p style={{ fontFamily: "'Cinzel', serif", fontSize: "11px", letterSpacing: "0.2em", color: "#8B7355", textTransform: "uppercase", marginBottom: isMobile ? "1.5rem" : "2rem" }}>
           Story Mode · Immersive Epic
         </p>
 
         {/* Narration box */}
         <div style={{
           background: "rgba(10,8,5,0.8)", border: "1px solid rgba(193,127,58,0.25)",
-          borderRadius: "8px", padding: "2.5rem", marginBottom: "2rem",
+          borderRadius: "8px",
+          padding: isMobile ? "1.5rem 1.25rem" : "2.5rem",
+          marginBottom: isMobile ? "1.5rem" : "2rem",
           position: "relative", textAlign: "left",
         }}>
           <div style={{
-            position: "absolute", top: "-1px", left: "2rem", right: "2rem", height: "1px",
+            position: "absolute", top: "-1px",
+            left: isMobile ? "1rem" : "2rem", right: isMobile ? "1rem" : "2rem",
+            height: "1px",
             background: "linear-gradient(90deg, transparent, rgba(193,127,58,0.6), transparent)",
           }} />
           <p style={{
-            fontFamily: "'Crimson Pro', serif", fontSize: "1.15rem",
+            fontFamily: "'Crimson Pro', serif",
+            fontSize: isMobile ? "1.05rem" : "1.15rem",
             color: "rgba(220,200,170,0.9)", lineHeight: "1.85",
             whiteSpace: "pre-wrap", fontStyle: "italic",
           }}>
             {node?.text}
           </p>
           <div style={{
-            position: "absolute", bottom: "-1px", left: "2rem", right: "2rem", height: "1px",
+            position: "absolute", bottom: "-1px",
+            left: isMobile ? "1rem" : "2rem", right: isMobile ? "1rem" : "2rem",
+            height: "1px",
             background: "linear-gradient(90deg, transparent, rgba(193,127,58,0.4), transparent)",
           }} />
         </div>
@@ -917,6 +1056,7 @@ function GuideChat() {
   const { messages, loading, sendMessage } = useChat();
   const [input, setInput] = useState("");
   const bottomRef = useRef(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -938,48 +1078,74 @@ function GuideChat() {
   ];
 
   return (
-    <div style={{ maxWidth: "760px", margin: "0 auto", padding: "5rem 2rem 2rem", display: "flex", flexDirection: "column", height: "100vh" }}>
+    <div
+      className="guide-chat-root"
+      style={{
+        maxWidth: "760px", margin: "0 auto",
+        padding: isMobile
+          ? "calc(60px + env(safe-area-inset-top) + 0.75rem) 1rem calc(0.75rem + env(safe-area-inset-bottom))"
+          : "5rem 2rem 2rem",
+        display: "flex", flexDirection: "column",
+      }}
+    >
       {/* Header */}
-      <div style={{ textAlign: "center", paddingBottom: "1.5rem", borderBottom: "1px solid rgba(193,127,58,0.2)", marginBottom: "1.5rem" }}>
+      <div style={{ textAlign: "center", paddingBottom: isMobile ? "1rem" : "1.5rem", borderBottom: "1px solid rgba(193,127,58,0.2)", marginBottom: isMobile ? "1rem" : "1.5rem" }}>
         <div style={{
-          width: "56px", height: "56px", borderRadius: "50%",
+          width: isMobile ? "44px" : "56px",
+          height: isMobile ? "44px" : "56px",
+          borderRadius: "50%",
           background: "radial-gradient(circle, rgba(193,127,58,0.25) 0%, rgba(193,127,58,0.05) 70%)",
           border: "1px solid rgba(193,127,58,0.4)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          margin: "0 auto 0.75rem", fontSize: "20px",
+          margin: "0 auto 0.5rem", fontSize: isMobile ? "16px" : "20px",
         }}>✦</div>
-        <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: "1.25rem", color: "#E8D5A8", fontWeight: "400", marginBottom: "0.25rem" }}>
+        <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: isMobile ? "1.1rem" : "1.25rem", color: "#E8D5A8", fontWeight: "400", marginBottom: "0.25rem" }}>
           The Manas Guide
         </h2>
-        <p style={{ fontFamily: "'Crimson Pro', serif", fontSize: "13px", color: "#8B7355", fontStyle: "italic" }}>
-          Inspired by the spirit of the epic — not a prophet, but a voice shaped by old wisdom
+        <p style={{ fontFamily: "'Crimson Pro', serif", fontSize: isMobile ? "12px" : "13px", color: "#8B7355", fontStyle: "italic" }}>
+          {isMobile
+            ? "A voice shaped by old wisdom"
+            : "Inspired by the spirit of the epic — not a prophet, but a voice shaped by old wisdom"}
         </p>
       </div>
 
       {/* Warrior mode prompts */}
-      <div style={{ marginBottom: "1.25rem" }}>
+      <div style={{ marginBottom: isMobile ? "1rem" : "1.25rem" }}>
         <p style={{ fontFamily: "'Cinzel', serif", fontSize: "10px", letterSpacing: "0.15em", color: "#8B7355", textTransform: "uppercase", marginBottom: "0.6rem" }}>
           Ask like a warrior
         </p>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <div style={{
+          display: "flex", gap: "0.5rem",
+          flexWrap: isMobile ? "nowrap" : "wrap",
+          overflowX: isMobile ? "auto" : "visible",
+          paddingBottom: isMobile ? "0.25rem" : 0,
+          margin: isMobile ? "0 -1rem" : 0,
+          padding: isMobile ? "0 1rem 0.25rem" : 0,
+          WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none",
+        }}>
           {WARRIOR_PROMPTS.map((p) => (
             <button
               key={p}
               onClick={() => { setInput(p); }}
               style={{
-                padding: "5px 12px", borderRadius: "3px", cursor: "pointer",
+                padding: isMobile ? "8px 14px" : "5px 12px",
+                borderRadius: "3px", cursor: "pointer",
                 border: "1px solid rgba(193,127,58,0.25)",
                 background: "rgba(193,127,58,0.05)",
-                color: "rgba(220,200,170,0.6)",
-                fontFamily: "'Crimson Pro', serif", fontSize: "12px",
+                color: "rgba(220,200,170,0.7)",
+                fontFamily: "'Crimson Pro', serif",
+                fontSize: isMobile ? "13px" : "12px",
                 transition: "all 0.2s",
+                whiteSpace: isMobile ? "nowrap" : "normal",
+                flexShrink: 0,
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.color = "#C17F3A";
                 e.currentTarget.style.borderColor = "rgba(193,127,58,0.5)";
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.color = "rgba(220,200,170,0.6)";
+                e.currentTarget.style.color = "rgba(220,200,170,0.7)";
                 e.currentTarget.style.borderColor = "rgba(193,127,58,0.25)";
               }}
             >
@@ -1014,7 +1180,9 @@ function GuideChat() {
             )}
             <div
               style={{
-                maxWidth: "80%", padding: "1rem 1.25rem", borderRadius: "8px",
+                maxWidth: isMobile ? "85%" : "80%",
+                padding: isMobile ? "0.85rem 1rem" : "1rem 1.25rem",
+                borderRadius: "8px",
                 background: msg.role === "user"
                   ? "rgba(193,127,58,0.12)"
                   : "rgba(255,255,255,0.04)",
@@ -1022,7 +1190,9 @@ function GuideChat() {
                   ? "1px solid rgba(193,127,58,0.3)"
                   : "1px solid rgba(220,200,170,0.1)",
                 fontFamily: "'Crimson Pro', serif",
-                fontSize: msg.role === "assistant" ? "1.05rem" : "1rem",
+                fontSize: isMobile
+                  ? "1rem"
+                  : (msg.role === "assistant" ? "1.05rem" : "1rem"),
                 color: msg.role === "user" ? "rgba(220,200,170,0.9)" : "rgba(220,200,170,0.85)",
                 lineHeight: "1.75", whiteSpace: "pre-wrap",
                 fontStyle: msg.role === "assistant" ? "normal" : "normal",
@@ -1057,20 +1227,30 @@ function GuideChat() {
 
       {/* Input */}
       <div style={{
-        display: "flex", gap: "0.75rem", padding: "1rem",
+        display: "flex",
+        gap: isMobile ? "0.5rem" : "0.75rem",
+        padding: isMobile ? "0.75rem" : "1rem",
         border: "1px solid rgba(193,127,58,0.25)", borderRadius: "8px",
         background: "rgba(10,8,5,0.5)",
+        alignItems: "flex-end",
       }}>
         <textarea
           value={input}
           onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+          onKeyDown={e => {
+            if (!isMobile && e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
           placeholder="Speak your question to the Guide..."
           style={{
             flex: 1, background: "transparent", border: "none", outline: "none",
             color: "rgba(220,200,170,0.9)", fontFamily: "'Crimson Pro', serif",
-            fontSize: "1rem", resize: "none", lineHeight: "1.6",
+            fontSize: "16px",
+            resize: "none", lineHeight: "1.6",
             minHeight: "44px", maxHeight: "120px",
+            padding: 0,
           }}
           rows={1}
         />
@@ -1078,12 +1258,15 @@ function GuideChat() {
           onClick={handleSend}
           disabled={loading || !input.trim()}
           style={{
-            padding: "8px 18px", borderRadius: "4px", cursor: loading || !input.trim() ? "default" : "pointer",
+            padding: isMobile ? "12px 16px" : "8px 18px",
+            borderRadius: "4px",
+            cursor: loading || !input.trim() ? "default" : "pointer",
             background: loading || !input.trim() ? "rgba(193,127,58,0.15)" : "#C17F3A",
             border: "1px solid rgba(193,127,58,0.5)",
             color: loading || !input.trim() ? "rgba(193,127,58,0.5)" : "#1A0E00",
             fontFamily: "'Cinzel', serif", fontSize: "12px",
-            letterSpacing: "0.05em", transition: "all 0.2s", alignSelf: "flex-end",
+            letterSpacing: "0.05em", transition: "all 0.2s",
+            minHeight: "44px", flexShrink: 0,
           }}
         >
           Send
@@ -1106,6 +1289,8 @@ function GuideChat() {
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(193,127,58,0.3); border-radius: 2px; }
+        .guide-chat-root { height: 100vh; height: 100dvh; }
+        .guide-chat-root > div::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );
@@ -1123,15 +1308,27 @@ export default function App() {
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Crimson+Pro:ital,wght@0,400;0,500;1,400;1,500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0A0805; }
-        button { font-family: inherit; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body {
+          background: #0A0805;
+          overflow-x: hidden;
+          width: 100%;
+          -webkit-text-size-adjust: 100%;
+          -webkit-font-smoothing: antialiased;
+        }
+        button { font-family: inherit; -webkit-appearance: none; }
+        textarea, input { -webkit-appearance: none; border-radius: 0; }
         textarea::placeholder { color: rgba(139,115,85,0.5); }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .section-enter { animation: fadeIn 0.4s ease forwards; }
+        @media (max-width: 768px) {
+          input, textarea, select { font-size: 16px !important; }
+          button { min-height: 36px; }
+          h1, h2, h3, p { word-wrap: break-word; overflow-wrap: break-word; }
+        }
       `}</style>
 
       <link
